@@ -19,8 +19,8 @@ numVariables = 8
 lRate = 0.001
 # bellman discount
 discount = 0.99
-# maximum number of memories stored 500k since we are storing so many memories
-maxMemory = 500000
+# maximum number of memories stored 400k since we are storing so many memories and i just never want it to overflow
+maxMemory = 400000
 # memory buffer
 replayMemory = deque(maxlen=maxMemory)
 # chance that rather than using the DQN, you take a random action and explore
@@ -33,8 +33,6 @@ trainingEpochs = 1
 observeAndTrain = True
 # number of games of lunar lander to actually play
 numGames = 1000
-# list to hold all the rewards of the episodes
-rewardsList = []
 # counter 
 counter = 0
 
@@ -50,7 +48,7 @@ model = Sequential()
 # we're using rectified linear units for the activation
 # not gonna pretend i know exactly what that means but again, seems standard
 model.add(layers.Dense(512, activation='relu', input_dim=numObsSpace))
-# we're going to have two hidden layers
+# we're going to have one hidden layer
 model.add(layers.Dense(256, activation='relu'))
 # output layer with 4 nodes for the 4 possible actions
 model.add(layers.Dense(numActions, activation=activations.linear))
@@ -83,22 +81,28 @@ def findAction(qstate):
 
 # add a memory to the array
 def addToMemory(state, action, reward, nextState, done):
-    # add it as a five-tuple
-    replayMemory.append((state, action, reward, nextState, done))
+    # add it as an array
+    replayMemory.append([state, action, reward, nextState, done])
 
 # get the individual attributes from the memory
 def getAttributes(sample):
     # extract the attributes from the sample memories
-    # handy trick for getting the ith elements of an array of tuples
-    states = np.array([i[0] for i in sample])
-    actions = np.array([i[1] for i in sample])
-    rewards = np.array([i[2] for i in sample])
-    nextStates = np.array([i[3] for i in sample])
-    doneList = np.array([i[4] for i in sample])
-    
+    for i in sample:
+          states.append(i[0])
+          actions.append(i[1])
+          rewards.append(i[2])
+          nextStates.append(i[3])
+          doneList.append[i[4])
+    # make them np arrays
+    states = np.array(states)
+    actions = np.array(actions)
+    rewards = np.array(rewards)
+    nextStates = np.array(nextStates)
+    doneList = np.array(doneList)
     # the states array is of a strange size, squeeze it twice to make it fit with thes rest of our stuff
     states = np.squeeze(states)
     states = np.squeeze(states)
+    # likewise with nextStates
     nextStates = np.squeeze(nextStates)
 
     return states, actions, rewards, nextStates, doneList
@@ -166,8 +170,8 @@ if observeAndTrain:
                 # find the target from the sample of nextStates
                 targets = rewards + discount * (np.amax(model.predict_on_batch(nextStates), axis=1)) * (1-doneList)
                 # get predictions for what the model would do on previous states
-                targetVec = model.predict_on_batch(states)
-                # this is just for 0....63 for the targetVec
+                targetVals = model.predict_on_batch(states)
+                # this is just for 0....63 for the targetVals
                 indexes = np.array([i for i in range(64)])
                 # assign the target values to be fitted
                 targetVals[[indexes], [actions]] = targets
@@ -181,10 +185,8 @@ if observeAndTrain:
             # we want to decay the rate by which we explore. exploring is good in the beginning when our model is bad
             # but exploring later on when the model is good is detrimental
             if exploreProb > exploreProbMin:
-                exploreProb *= decay
-
-            # add the reward to the list
-            rewardsList.append(episodeReward)
+                exploreProb = exploreProb * decay
+                    
             # if the game did end we need to leave
             if done:
                 if reward > 50:
