@@ -1,23 +1,28 @@
 '''
 LunarLander_PolicyGradient
-Nathan Huffman
+author: Nathan Huffman
+version: 0.1
+
+This library implements Policy Gradient reinforcement learning, namely for Lunar Lander.
+It Also contains wrappers for running this agent on any given environment.
 '''
+
 
 #---Parameters-----------------
 save_dir = 'checkpnts'
 save_file = None    # 'Lunar_16_24_16'
 restore_file = None # 'LunarLander-v2_(256, 256)-0.001-0.95_ 200'
 #------------------------------
-episodes = 1000
-learning_rate = 0.005
-discount = 0.99
-layers = (16, 8)
+episodes = 2500
+learning_rate = 0.0075
+discount = 0.995
+layers = (16,24,16,8)
 target_score = 200
 target_window = 100
 save_interval = 500
 #------------------------------
 step_limit = 500
-step_limit_penalty = -50
+step_limit_penalty = -10
 #------------------------------
 
 # Allow CPU to be preferred with '-c' or '--cpu' command line arg
@@ -93,7 +98,7 @@ class PolicyGradient:
         
         std = np.std(G) if np.std(G) > 0 else 1
         return (G-np.mean(G))/std       # Standardize advantages
-    
+        
     # Improve own policy, using gradient ascent that utilizes model's certainty
     def learn(self):
         actions = np.array(self.action_memory)  # Get actions taken
@@ -157,7 +162,7 @@ class EnvRunner:
         
         if not save_file: save_file = model_dir         # Create default save_file if preferernce doesn't exist
         
-        return '{}.h5'.format(restore_file), save_file  # Return formatted restore file and save_file
+        return '{}.tf'.format(restore_file), save_file  # Return formatted restore file and save_file
     
     # Export model and rewards to files
     def save_model(self, episode):
@@ -165,7 +170,7 @@ class EnvRunner:
         if not path.exists(model_dir): makedirs(model_dir)
         
         save_episode = path.join(model_dir,'{}_{:d}'.format(self.save_file,episode))
-        save_model(self.agent.policy, '{}.h5'.format(save_episode,episode), overwrite=True)
+        save_model(self.agent.policy, '{}.tf'.format(save_episode,episode), overwrite=True, save_format='tf')
         
         reward_file = open('{}.txt'.format(save_episode,episode), 'w+')
         for line in self.score_memory:     # Write reward memory to file
@@ -186,9 +191,11 @@ class EnvRunner:
     def graph_learning(self):
         save_name = '{}_{:d}.png'.format(self.save_file, self.episodes_trained)
         save_loc = path.join(save_dir, self.save_file, save_name)
-        plt.plot(self.score_memory)
-        plt.xlabel('Episode'); plt.ylabel('Policy Score')
-        plt.ylim((-600, 300))
+        plt.plot(self.score_memory, label='Agent Score')
+        plt.xlabel('Episode',fontsize=14); plt.ylabel('Policy Score',fontsize=14)
+        plt.title('Policy Gradient - Agent Learning',fontsize=18)
+        plt.legend(loc='upper left')
+        plt.ylim((-500, 300))
         plt.savefig(save_loc)
         plt.show()
     
@@ -246,10 +253,11 @@ def handle_args():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-c","--cpu", help="Force to execute on CPU", action="store_true")
     parser.add_argument("-e","--eval", help="Only perform evaluation", action="store_true")
-    parser.add_argument("-t","--train", help="Specify num training episdes",type=int)
-    parser.add_argument("-a","-lr", "--learning_rate", help="Specify alpha / learning rate",type=float)
+    parser.add_argument("-t","--train", help="Specify num training episdes", type=int)
+    parser.add_argument("-l", "--layes", help="Specify number nodes for each layer", type=int)
+    parser.add_argument("-a","-lr", "--learning_rate", help="Specify alpha / learning rate", type=float)
     parser.add_argument("-g","-d", "--discount", help="Specify gamma / discount rate", type=float)
-    parser.add_argument("-l","--limit", help="Specify step limit before terminating agent", type=int)
+    parser.add_argument("-lm","--limit", help="Specify step limit before terminating agent", type=int)
     parser.add_argument("-p","--penalty", help="Specify penalty for timing out", type=int)
     parser.add_argument("-r","--restore", help="Specify filename to restore from")
     parser.add_argument("-s","--save", help="Specify filename to save to")
