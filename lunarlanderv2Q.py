@@ -87,12 +87,17 @@ def addToMemory(state, action, reward, nextState, done):
 # get the individual attributes from the memory
 def getAttributes(sample):
     # extract the attributes from the sample memories
+    states = []
+    actions = []
+    rewards = []
+    nextStates = []
+    doneList = []
     for i in sample:
           states.append(i[0])
           actions.append(i[1])
           rewards.append(i[2])
           nextStates.append(i[3])
-          doneList.append[i[4])
+          doneList.append(i[4])
     # make them np arrays
     states = np.array(states)
     actions = np.array(actions)
