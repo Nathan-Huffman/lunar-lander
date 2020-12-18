@@ -45,7 +45,7 @@ from tensorflow_probability import distributions
 # Reinforcement learning agent that utilizing Policy Gradient
 class PolicyGradient:
     def __init__(self, n_inputs, n_actions, alpha=learning_rate,
-                 gamma=learning_rate, layers=layers, restore_file=None):
+                 gamma=discount, layers=layers, restore_file=None):
         self.gamma = gamma          # Store discount factor
         self.n_inputs = n_inputs    # Store dimension of input
         self.n_actions = n_actions  # Store dimension of output
